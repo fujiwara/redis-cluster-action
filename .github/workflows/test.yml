@@ -1,0 +1,48 @@
+name: test
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - "redis:7"
+          - "redis:8"
+          - "valkey/valkey:7"
+          - "valkey/valkey:8"
+    name: ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./
+        id: cluster
+        with:
+          image: ${{ matrix.image }}
+          password: testpass
+
+      - name: Verify cluster
+        run: |
+          HOST="${{ steps.cluster.outputs.host }}"
+          PORT="${{ steps.cluster.outputs.first-port }}"
+          PASS="${{ steps.cluster.outputs.password }}"
+          CLI="docker exec redis-cluster-node-0 redis-cli -h $HOST -p $PORT -a $PASS"
+
+          # Check cluster info
+          $CLI cluster info | grep cluster_state:ok
+
+          # Check all nodes are visible
+          NODES=$($CLI cluster nodes | wc -l)
+          echo "Cluster has $NODES nodes"
+          [ "$NODES" -eq 3 ]
+
+          # Write and read across slots
+          for i in $(seq 1 10); do
+            $CLI -c SET "key:$i" "value:$i"
+          done
+          for i in $(seq 1 10); do
+            VAL=$($CLI -c GET "key:$i")
+            [ "$VAL" = "value:$i" ] || { echo "FAIL: key:$i expected value:$i got $VAL"; exit 1; }
+          done
+
+          echo "All checks passed"
