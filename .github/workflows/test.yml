@@ -22,11 +22,12 @@ jobs:
           password: testpass
 
       - name: Verify cluster
+        env:
+          REDISCLI_AUTH: ${{ steps.cluster.outputs.password }}
         run: |
           HOST="${{ steps.cluster.outputs.host }}"
           PORT="${{ steps.cluster.outputs.first-port }}"
-          PASS="${{ steps.cluster.outputs.password }}"
-          CLI="docker exec redis-cluster-node-0 redis-cli -h $HOST -p $PORT -a $PASS"
+          CLI="docker exec -e REDISCLI_AUTH=$REDISCLI_AUTH redis-cluster-node-0 redis-cli -h $HOST -p $PORT"
 
           # Check cluster info
           $CLI cluster info | grep cluster_state:ok

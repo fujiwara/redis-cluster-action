@@ -45,20 +45,16 @@ for i in $(seq 0 $((NODES - 1))); do
     --name "redis-cluster-node-$i" \
     --network host \
     -v "$CONF:/usr/local/etc/redis/redis.conf:ro" \
+    -e "REDISCLI_AUTH=$PASSWORD" \
     "$IMAGE" \
     redis-server /usr/local/etc/redis/redis.conf --port "$PORT"
 done
 
 # Wait for all nodes to be ready
-AUTH_ARGS=""
-if [ -n "$PASSWORD" ]; then
-  AUTH_ARGS="-a $PASSWORD"
-fi
-
 for i in $(seq 0 $((NODES - 1))); do
   PORT=$((BASE_PORT + i))
   for attempt in $(seq 1 30); do
-    if docker exec "redis-cluster-node-0" redis-cli $AUTH_ARGS -p "$PORT" ping 2>/dev/null | grep -q PONG; then
+    if docker exec "redis-cluster-node-0" redis-cli -p "$PORT" ping 2>/dev/null | grep -q PONG; then
       break
     fi
     if [ "$attempt" -eq 30 ]; then
@@ -70,11 +66,11 @@ for i in $(seq 0 $((NODES - 1))); do
 done
 
 # Create cluster
-docker exec "redis-cluster-node-0" redis-cli $AUTH_ARGS --cluster create $ENDPOINTS --cluster-replicas 0 --cluster-yes
+docker exec "redis-cluster-node-0" redis-cli --cluster create $ENDPOINTS --cluster-replicas 0 --cluster-yes
 
 # Wait for cluster to be ready
 for attempt in $(seq 1 30); do
-  if docker exec "redis-cluster-node-0" redis-cli $AUTH_ARGS -p "$BASE_PORT" cluster info 2>/dev/null | grep -q "cluster_state:ok"; then
+  if docker exec "redis-cluster-node-0" redis-cli -p "$BASE_PORT" cluster info 2>/dev/null | grep -q "cluster_state:ok"; then
     break
   fi
   if [ "$attempt" -eq 30 ]; then
