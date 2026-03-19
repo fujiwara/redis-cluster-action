@@ -1,0 +1,47 @@
+name: "Redis Cluster Action"
+description: "Start a Redis (or Valkey) Cluster for CI testing using official images with network_mode: host"
+
+inputs:
+  image:
+    description: "Docker image to use (e.g. redis:7, valkey/valkey:8)"
+    required: false
+    default: "redis:7"
+  nodes:
+    description: "Number of cluster nodes"
+    required: false
+    default: "3"
+  base-port:
+    description: "Base port number (nodes use base-port, base-port+1, ...)"
+    required: false
+    default: "16379"
+  password:
+    description: "Redis AUTH password (empty for no authentication)"
+    required: false
+    default: ""
+
+outputs:
+  host:
+    description: "Host address"
+    value: "127.0.0.1"
+  ports:
+    description: "Comma-separated list of node ports"
+    value: ${{ steps.start.outputs.ports }}
+  first-port:
+    description: "Port of the first node"
+    value: ${{ inputs.base-port }}
+  password:
+    description: "Password (same as input, for convenience)"
+    value: ${{ inputs.password }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Start Redis Cluster
+      id: start
+      shell: bash
+      run: |
+        ${{ github.action_path }}/start.sh \
+          "${{ inputs.image }}" \
+          "${{ inputs.nodes }}" \
+          "${{ inputs.base-port }}" \
+          "${{ inputs.password }}"
