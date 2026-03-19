@@ -13,11 +13,15 @@ steps:
     with:
       password: testpass
 
-  - run: |
-      echo "Host: ${{ steps.redis.outputs.host }}"
-      echo "Ports: ${{ steps.redis.outputs.ports }}"
-      echo "First port: ${{ steps.redis.outputs.first-port }}"
-      redis-cli -a ${{ steps.redis.outputs.password }} -p ${{ steps.redis.outputs.first-port }} cluster info
+  - name: Verify cluster
+    env:
+      REDIS_HOST: ${{ steps.redis.outputs.host }}
+      REDIS_PORT: ${{ steps.redis.outputs.first-port }}
+      REDISCLI_AUTH: ${{ steps.redis.outputs.password }}
+    run: |
+      echo "Host: $REDIS_HOST"
+      echo "Ports: $REDIS_PORT"
+      redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" cluster info
 ```
 
 ### With Valkey
