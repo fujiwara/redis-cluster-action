@@ -39,9 +39,10 @@ runs:
     - name: Start Redis Cluster
       id: start
       shell: bash
+      env:
+        INPUT_IMAGE: ${{ inputs.image }}
+        INPUT_NODES: ${{ inputs.nodes }}
+        INPUT_BASE_PORT: ${{ inputs.base-port }}
+        INPUT_PASSWORD: ${{ inputs.password }}
       run: |
-        ${{ github.action_path }}/start.sh \
-          "${{ inputs.image }}" \
-          "${{ inputs.nodes }}" \
-          "${{ inputs.base-port }}" \
-          "${{ inputs.password }}"
+        ${{ github.action_path }}/start.sh

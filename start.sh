@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE="$1"
-NODES="$2"
-BASE_PORT="$3"
-PASSWORD="$4"
+IMAGE="${INPUT_IMAGE:?}"
+NODES="${INPUT_NODES:?}"
+BASE_PORT="${INPUT_BASE_PORT:?}"
+PASSWORD="${INPUT_PASSWORD:-}"
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
